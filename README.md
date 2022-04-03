@@ -3,6 +3,7 @@
 Document Storage on SQLite
 
 Use SQLite3 (version 3.38.2 or higher) as a document database similar to the [cosmos sdk](https://github.com/Azure/azure-cosmos-dotnet-v3), but in-process.
+This uses the [JSON1](https://www.sqlite.org/json1.html) extensions that are now part of the core SQLite library, and this will use the [FTS5](https://www.sqlite.org/fts5.html) extensions to provide full text search over those json documents.
 
 [Example](./Program.cs)
 ```cs
@@ -48,3 +49,10 @@ INSERT INTO myclass (key, body)
     ON CONFLICT (key) DO UPDATE SET body = excluded.body
     RETURNING key
 ```
+
+## References
+
+- [SQLite as a document database](https://dgl.cx/2020/06/sqlite-json-support)
+    - [hacker news discussion](https://news.ycombinator.com/item?id=25226260)
+- [Using the SQLite JSON1 and FTS5 Extensions with Python](https://charlesleifer.com/blog/using-the-sqlite-json1-and-fts5-extensions-with-python/?utm_source=pocket_mylist)
+- [Linq 2 Cosmos](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/master/Microsoft.Azure.Cosmos/src/Linq/ExpressionToSQL.cs)
