@@ -2,7 +2,7 @@ using System.Data;
 
 namespace DoqLite
 {
-    public class DoqCollection<T> where T: IEntity
+    public class DoqCollection<T> where T : IEntity
     {
         private readonly SqliteConnection conn;
         private readonly string collectionName;
@@ -60,7 +60,9 @@ namespace DoqLite
 
         public T Get(int key)
         {
-            return conn.QueryFirst<T>($"select * from {collectionName} where key = {key}");
+            var (dbKey, item) = conn.QueryFirst<(int, T)>($"SELECT * FROM {collectionName} WHERE key = {key}");
+            item.Key = dbKey;
+            return item;
         }
 
         public T Get(T item)
@@ -68,7 +70,25 @@ namespace DoqLite
             return Get(item.Key);
         }
 
-        public IEnumerable<T> Items => conn.Query<T>($"select body from {collectionName}");
+        public IEnumerable<T> Items => conn
+            .Query<(int key, T value)>($"SELECT * FROM {collectionName} AS t")
+            .Select(item =>
+            {
+                item.value.Key = item.key;
+                return item.value;
+            });
+
+        /// <summary>
+        /// Where clause in sql - collection is named `t`
+        /// e.g.,: t.body->>'description' = 'filter on description'
+        /// </summary>
+        public IEnumerable<T> Where(string where) => conn
+            .Query<(int key, T value)>($"SELECT * FROM {collectionName} AS t WHERE {where}")
+            .Select(item =>
+            {
+                item.value.Key = item.key;
+                return item.value;
+            });
     }
 
     public class JsonTypeHandler<T> : SqlMapper.TypeHandler<T>

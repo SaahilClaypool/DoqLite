@@ -20,7 +20,10 @@ collection.Upsert(item1);
 
 collection.Delete(item2);
 
-foreach (var item in collection.Items)
+item1.Key = 10;
+collection.Upsert(item1);
+
+foreach (var item in collection.Where("t.body->>'y' = 'change row one'"))
 {
     WriteLine(item.ToJson());
 }
