@@ -25,7 +25,7 @@ foreach (var item in collection.Items)
     WriteLine(item.ToJson());
 }
 
-class MyClass
+class MyClass : IEntity
 {
     public int Key { get; set; }
     public int X { get; set; }

@@ -2,7 +2,7 @@ using System.Data;
 
 namespace DoqLite
 {
-    public class DoqCollection<T>
+    public class DoqCollection<T> where T: IEntity
     {
         private readonly SqliteConnection conn;
         private readonly string collectionName;
@@ -22,22 +22,16 @@ namespace DoqLite
         public int Insert(T item, bool update = false)
         {
             var updateExpression = update ? "ON CONFLICT (key) DO UPDATE SET body = excluded.body" : "";
-            bool hasKey = false;
-            var keyProp = item.GetProperty("Key");
-            var key = keyProp.GetValue(item);
+            var key = item.Key;
 
             var itemJson = item.ToJson();
             var values = $"(json('{itemJson}'))";
             var insertExpression = $"(body)";
 
-            if (key.GetType().IsAssignableTo(typeof(int)))
+            if (key > 0)
             {
-                hasKey = true;
-                if ((int)key > 0)
-                {
-                    values = $"({key}, json('{itemJson}'))";
-                    insertExpression = $"(key, body)";
-                }
+                values = $"({key}, json('{itemJson}'))";
+                insertExpression = $"(key, body)";
             }
 
             var command =
@@ -48,10 +42,7 @@ namespace DoqLite
                 {returning}";
             Console.WriteLine(command);
             var id = conn.ExecuteScalar<int>(command);
-            if (hasKey)
-            {
-                keyProp.SetValue(item, id);
-            }
+            item.Key = id;
             return id;
         }
 
@@ -64,8 +55,7 @@ namespace DoqLite
 
         public int Delete(T item)
         {
-            var key = (int)item.GetProperty("Key").GetValue(item, null);
-            return Delete(key);
+            return Delete(item.Key);
         }
 
         public T Get(int key)
@@ -75,8 +65,7 @@ namespace DoqLite
 
         public T Get(T item)
         {
-            var key = (int)item.GetProperty("Key").GetValue(item, null);
-            return Get(key);
+            return Get(item.Key);
         }
 
         public IEnumerable<T> Items => conn.Query<T>($"select body from {collectionName}");
@@ -86,7 +75,7 @@ namespace DoqLite
     {
         public static void Register()
         {
-            SqlMapper.AddTypeHandler<T>(new JsonTypeHandler<T>());
+            SqlMapper.AddTypeHandler(new JsonTypeHandler<T>());
         }
 
         public override void SetValue(IDbDataParameter parameter, T value)
